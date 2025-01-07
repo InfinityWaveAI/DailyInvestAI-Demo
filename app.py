@@ -1,3 +1,6 @@
+# Streamlit demo for DailyInvest AI
+
+# libraries
 import pandas as pd
 import streamlit as st
 from PIL import Image
@@ -5,63 +8,81 @@ import base64
 import io
 import os
 import json
-# Vykreslení tabulky s logy
+
+# Headers
 st.markdown("<h1 style='text-align: center;'>Daily Invest AI</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 20px;'>News</p>", unsafe_allow_html=True)
 st.write("")
 
-# Load the data
-# def load_data():
-#     df = pd.read_csv("final.csv")
-#     return df
 
-def load_news():
-    with open("news.json", "r") as f:
-        data = json.load(f)
-    return data
+# Loading the data
+def load_data():
+    with open("final.json", "r", encoding='utf-8') as f:
+        d = json.load(f)
+    df = pd.DataFrame(d)
+    return df
 
-# data = load_data().copy()
-news = load_news().copy()
-
-# Convert image to Base64
-# def image_to_base64(img_path, output_size=(64, 64)):
-#     # Check if the image path exists
-#     if os.path.exists(img_path):
-#         with Image.open(img_path) as img:
-#             img = img.resize(output_size)
-#             buffered = io.BytesIO()
-#             img.save(buffered, format="PNG")
-#             return f"data:image/png;base64,{base64.b64encode(buffered.getvalue()).decode()}"
-#     return ""
-
-# If 'Logo' column doesn't exist, create one with path to the logos
-# if 'Logo' not in data.columns:
-#     output_dir = 'downloaded_logos'
-#     data['Logo'] = data['Name'].apply(lambda name: os.path.join(output_dir, f'{name}.png'))
-
-# Convert image paths to Base64
+full = load_data()
+full['company name'] = full['company name'].apply(lambda x:x.upper())
 
 
-# image_column = st.column_config.ImageColumn(label="")
-nazev_column = st.column_config.TextColumn(label="Company Name")
-market_cap_column = st.column_config.TextColumn(label="News 💬",help="📍**Latest news**")
-# price_column = st.column_config.TextColumn(label="Stock Price", help="📍**Price in INR**")
 
-# Adjust the index to start from 1 and display only the first 25 companies
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.markdown('')
+with col2:
+    option = st.selectbox(
+        "Select the language",
+        ("Hindi", "Telugu"),
+    )
+
+    st.write("You selected:", option)
+with col3:
+    st.markdown('')
+# Lanuage selection
+
+# Cleaning the data
+# Adjust the index to start from 1 
+data = full.copy()
+data.reset_index(drop=True, inplace=True)
+data.index = data.index + 1
+
+## Changing the data: based on selection
+# only required collumns 
+another_col = option.lower()
+
+req_cols = ['company name', 'price', another_col, 'text' ]
+data = data[req_cols]
+
+new_cols = ['Name',  'Price', another_col, 'News']
+data.columns = new_cols
 
 
-temp = pd.DataFrame(news)
-req_cols = ["company", "text"]
-temp = temp[req_cols]
-temp.index = temp.index + 1
-temp.columns = ['Name', 'Market Cap']
+# Search bar :> 
+text_search = st.text_input("Search a company name", value="")
+
+filtered_data = data[data['Name'].str.contains(text_search.upper(), na=False)]
+
+# defining columns for the dataframe
+company_name_column =  st.column_config.TextColumn(label="Company Name")
+price_column = st.column_config.TextColumn(label="Stock Price", help="📍**Price in INR**")
+news_lang_column = st.column_config.TextColumn(label="News {}💬".format(option.lower()),help="📍**Latest news in your language**")
+news_column = st.column_config.TextColumn(label="News 💬",help="📍**Latest news**")
+
+
 
 # Display the dataframe
-st.dataframe(temp, height=250, column_config={"Name":nazev_column,'Market Cap':market_cap_column})
+event = st.dataframe(filtered_data, use_container_width=True,
+              hide_index=True,
+              on_select="rerun",
+              selection_mode=["single-row", "single-column"],
+            )
 
-import datetime
+i = event.selection.rows
 
-# Získání aktuálního data
-dnesni_datum = datetime.date.today().strftime("%d.%m.%Y")  # Formátování data na formát DD.MM.YYYY
 
-st.markdown(f'<span style="font-size: 14px">**Disclaimer:** Only for the demo purpose |</span>', unsafe_allow_html=True)
+if i:
+    name = filtered_data['Name'].values[i][0]
+    sym = full[full['company name'] == name]['symbol'].values[0]
+    url = str("graphs/"+ sym +".svg")
+    st.image(url, caption=name, width=600)
+
