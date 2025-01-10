@@ -134,7 +134,7 @@ if company != "":
         # url = str("graphs/"+ sym +".svg")
         url = str("https://nsearchives.nseindia.com/today/{}EQN.svg".format(sym))
         # url = str("https://nsearchives.nseindia.com/today/INFYEQN.svg")
-        st.image(url, caption=sym)
+        st.image(url, caption=sym, use_container_width =True)
 
     with col2:
         change = float(details["CLOSE_PRICE"]) - float(details["OPEN_PRICE"]) 
