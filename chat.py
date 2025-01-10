@@ -35,5 +35,5 @@ if company != "":
     # st.write("You selected:", option)
     query = st.text_input("Please write you query!")
     if query != "":
-        st.write("Yes. 52Week low for company TATA MOTORS is 500")
+        st.write("Yes. 52Week low for company TATA MOTORS is Rs. 717.7")
 
